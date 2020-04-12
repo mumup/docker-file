@@ -1,0 +1,49 @@
+version: "3.7"
+
+services: 
+    m-es:
+        build:
+            context: ./dockerfiles
+            dockerfile: elasticsearch.dockerfile
+        container_name: es
+        environment:
+            - TZ=Asia/Shanghai
+            - discovery.type=single-node
+        volumes:
+            - esdata:/usr/share/elasticsearch/data
+        expose:
+            - "9200"
+            - "9300"
+        ports:
+            - "127.0.0.1:9200:9200"
+            - "127.0.0.1:9300:9300"
+        networks:
+            - esnet
+    
+    cerebro:
+        image: lmenezes/cerebro:0.8.5  #  cerebro镜像
+        container_name: cerebro
+        ports:
+            - "127.0.0.1:9000:9000"  #  容器端口映射到本地9000端口
+        command:
+            - -Dhosts.0.host=http://m-es:9200
+        networks:
+            - esnet
+
+    kibana:
+        image: kibana:7.6.2
+        container_name: kibana
+        environment:
+            ELASTICSEARCH_HOSTS: http://m-es:9200
+        ports:
+            - "127.0.0.1:5601:5601"
+        networks:
+            - esnet
+
+networks:
+    esnet:
+        driver: bridge
+
+volumes:
+    esdata:
+        driver: local
